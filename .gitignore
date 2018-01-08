@@ -114,3 +114,6 @@ models
 data
 mask_rcnn_coco.h5
 images.bk
+
+# web source code
+web

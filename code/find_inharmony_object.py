@@ -79,8 +79,8 @@ image = skimage.io.imread(SRC_IMAGE_PATH)
 results = model.detect([image], verbose=1)
 r = results[0]
 
-visualize.display_instances_x(image, r['rois'], r['masks'], r['class_ids'], 
-                            class_names, r['scores'], save_path=os.path.join(ROOT_DIR, "./example-pre.png"))
+#visualize.display_instances_x(image, r['rois'], r['masks'], r['class_ids'], 
+#                            class_names, r['scores'], save_path=os.path.join(ROOT_DIR, "./example-pre.png"))
 
 from instance_context_model import *
 
