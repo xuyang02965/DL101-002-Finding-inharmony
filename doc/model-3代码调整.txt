@@ -1,0 +1,122 @@
+person, bannana, bird, sandwich
+
+
+all_catIds = [1, 16, 51, 54, 62, 78, 79, 82]
+
+catIds = [1, 62, 51, 79, 78, 82, 54, 16]
+imgIds = coco.getImgIds(catIds = catIds)
+len(imgIds)
+
+inputs = np.zeros(shape=(1, 16), dtype=np.int32)
+for i in range(len(catIds)):
+    inputs[0][i] = catIds[i]
+# inputs[0][0] = 1
+# inputs[0][1] = 42
+# inputs[0][2] = 57
+# inputs[0][3] = 76
+
+batch_size = 32
+epochs = 1000
+average_loss = 0
+step = 0
+eval_interval = 1000
+result = list()
+val_data = inputs
+num_inputs = len(val_data)
+order = np.arange(num_inputs)
+np.random.shuffle(order)
+for j in range(0, num_inputs, batch_size):
+    step += 1
+    batch_index = order[j: j + batch_size]
+    batch_inputs = val_data[batch_index]
+    #batch_labels = val_labels[batch_index]
+    feed_dict = {inputs_: batch_inputs}
+    # We perform one update step by evaluating the optimizer op (including it
+    # in the list of returned values for session.run()
+    output_val = session.run([final_output], feed_dict=feed_dict)
+    result += output_val
+
+results_list = list()
+for res in result:
+    for item in res:
+        results_list.append(item)
+
+r = list(results_list[0]*mask)
+
+candidates = dict()
+for catId in all_catIds:
+    if not (catId in catIds):
+        candidates[catId] = r[catId]
+        print (catId, r[catId])
+print (max(candidates, key=candidates.get))
+
+
+
+
+
+for catId in all_catIds:
+    print (catId, r[catId])
+
+sorted(r)
+
+
+
+
+In [90]: results_list[0][1]
+Out[90]: 0.00011302456
+
+In [91]: results_list[0][28]
+Out[91]: 0.0074472092
+
+In [92]: results_list[0][54]
+Out[92]: 0.0013089323
+
+In [93]: results_list[0][76]
+Out[93]: 0.0045280708
+
+
+from pycocotools.coco import COCO
+import numpy as np
+import skimage.io as io
+import matplotlib.pyplot as plt
+import pylab
+pylab.rcParams['figure.figsize'] = (8.0, 10.0)
+
+dataDir='./cocodata'
+dataType='train2017'
+annFile='{}/annotations/instances_{}.json'.format(dataDir,dataType)
+coco=COCO(annFile)
+
+%run ./instance_context_model.py
+
+session = tf.Session()
+model_base_path = './models/'
+model_name = 'instance-context-model'
+saver.restore(session, os.path.join(model_base_path, model_name))
+
+
+## model-3 训练数据生成
+
+imgIds = coco.getImgIds()
+a = list()
+for imgId in imgIds[:]:
+    b = set()
+    annIds = coco.getAnnIds(imgIds=[imgId])
+    for annId in annIds:
+        ann = coco.loadAnns([annId])
+        b.add(ann[0]['category_id'])
+    a.append(b)
+
+data = list()
+labels = list()
+for s in a:
+    if len(s) > 1:
+        for elem in s:
+            s1 = set([elem])
+            data.append(np.asarray(list(s)))
+            labels.append(np.asarray(list(s1)))
+
+train_data = np.asarray(data)
+train_labels = np.asarray(labels)
+np.save("data/train_data.npy", train_data)
+np.save("data/train_labels.npy", train_labels)

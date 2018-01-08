@@ -1,0 +1,136 @@
+ {1: 0.43530214,
+  16: 0.003190411,
+  51: 0.095410682,
+  54: 0.011986031,
+  62: 0.12747303,
+  78: 0.004522969,
+  79: 0.0070639756,
+  82: 0.012198183},
+
+ {1: 0.86973858,
+  17: 0.0020400942,
+  54: 0.0020557677,
+  65: 0.0014567419,
+  73: 0.0013275052},
+ {18: 0.12627226, 44: 0.079415292, 54: 0.0058411346, 70: 0.065446705},
+ {1: 0.44873375,
+  17: 0.004191638,
+  44: 0.016926914,
+  54: 0.0018114091,
+  70: 0.0051850127},
+ {1: 0.90510803,
+  3: 0.019525459,
+  10: 0.00078928104,
+  21: 0.0074445489,
+  54: 0.002114211,
+  62: 0.038715009,
+  63: 0.0011904717,
+  67: 0.02966876},
+
+
+all_catIds = [[1, 16, 51, 54, 62, 78, 79, 82], [1, 17, 54, 65, 73], [18, 44, 54, 70], [1, 17, 44, 54, 70], [1, 3, 10, 21, 54, 62, 63, 67]]
+rets = validate_batch(all_catIds)
+
+val_rdata = np.load("data/inharmony_data.npy")
+val_rlabels = np.load("data/inharmony_labels.npy")
+
+order = np.arange(len(val_rdata))
+start = 5
+batch_index = order[start * 585: (start + 1) * 585]
+val_data = val_rdata[batch_index]
+val_labels = val_rlabels[batch_index]
+rets = validate_batch(val_data)
+correct = 0
+for i in range(len(rets)):
+    #if rets[i][-1] == val_labels[i]:
+    if val_labels[i] in rets[i][-1:]:
+        correct += 1
+print ("average presicion is %f" % (correct*1./len(rets)))
+
+
+def validate_batch(batch_inputs):
+    rets = list()
+    for single_input in batch_inputs:
+        ret = validate_one(list(single_input))
+        rets.append(ret)
+    return rets
+
+def validate_one(all_catIds):
+    catIds = []
+    inputs = np.zeros(shape=(1, 16), dtype=np.int32)
+    for i in range(len(all_catIds)):
+        inputs[0][i] = all_catIds[i]
+    
+    while len(catIds) != len(all_catIds):
+        r = inference(inputs)
+        candidates = dict()
+        for catId in all_catIds:
+            if not (catId in catIds):
+                candidates[catId] = r[catId]
+                # print (catId, r[catId])
+        newcid = max(candidates, key=candidates.get)
+        # print (newcid)
+        # print ("*"*30)
+        catIds += [newcid]
+        inputs = np.zeros(shape=(1, 16), dtype=np.int32)
+        for i in range(len(all_catIds)):
+            inputs[0][i] = all_catIds[i]
+    
+    # print (catIds)
+    return catIds
+
+
+
+def inference(input):
+    feed_dict = {inputs_: input}
+    output_val = session.run([final_output], feed_dict=feed_dict)
+    
+    results_list = list()
+    for res in output_val:
+        for item in res:
+            results_list.append(item)
+    
+    r = list(results_list[0]*mask)
+    return r
+
+
+
+order = np.arange(len(val_rdata))
+oddCatIds = [54, 58, 59, 60, 61, 78, 79, 80, 81, 82]
+for start in range(len(oddCatIds)):
+    batch_index = order[start * 585: (start + 1) * 585]
+    val_data = val_rdata[batch_index]
+    val_labels = val_rlabels[batch_index]
+    rets = validate_batch(val_data)
+    correct = 0
+    for i in range(len(rets)):
+        #if rets[i][-1] == val_labels[i]:
+        if val_labels[i] in rets[i][-1:]:
+            correct += 1
+    print ("average presicion of %d is %f" % (oddCatIds[start], correct*1./len(rets)))
+
+
+[54, 58, 59, 60, 61, 78, 79, 80, 81, 82] 对应 [sandwich, 'hot dog', 'pizza', 'donut', 'cake', 'microwave', 'oven', 'toaster', 'sink', 'refrigerator']
+
+
+average presicion of 54 is 0.437607   0.738462
+average presicion of 58 is 0.389744   0.391453
+average presicion of 59 is 0.521368   0.505983
+average presicion of 60 is 0.362393   0.652991
+average presicion of 61 is 0.288889   0.451282
+average presicion of 78 is 0.188034   0.275214
+average presicion of 79 is 0.297436   0.452991
+average presicion of 80 is 0.641026   0.584615
+average presicion of 81 is 0.360684   0.603419
+average presicion of 82 is 0.189744   0.271795
+
+average presicion of 54 is   0.738462
+average presicion of 58 is   0.391453
+average presicion of 59 is   0.505983
+average presicion of 60 is   0.652991
+average presicion of 61 is   0.451282
+average presicion of 78 is   0.275214
+average presicion of 79 is   0.452991
+average presicion of 80 is   0.584615
+average presicion of 81 is   0.603419
+average presicion of 82 is   0.271795
